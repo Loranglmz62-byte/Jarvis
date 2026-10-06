@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#02070b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>JARVIS // VOICE CORE</title>
+<style>
+*{box-sizing:border-box}
+:root{--c:#00eaff;--c2:#54f7ff;--bg:#010609}
+html,body{margin:0;min-height:100%;background:#000;color:#dffcff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100vh;overflow-x:hidden;background:
+radial-gradient(circle at 50% 22%,#06323d 0%,#03151c 20%,#02080c 46%,#000 78%)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background:
+linear-gradient(rgba(0,234,255,.12) 1px,transparent 1px),
+linear-gradient(90deg,rgba(0,234,255,.12) 1px,transparent 1px);
+background-size:42px 42px;mask-image:linear-gradient(to bottom,black,transparent 80%)}
+main{width:min(760px,100%);margin:auto;padding:calc(18px + env(safe-area-inset-top)) 15px calc(30px + env(safe-area-inset-bottom))}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:.18em;color:#4f8994}
+h1{text-align:center;margin:8px 0 2px;color:var(--c);font-size:31px;letter-spacing:.34em;text-shadow:0 0 18px #00eaff66}
+.sub{text-align:center;color:#568994;font-size:9px;letter-spacing:.25em}
+.coreWrap{height:285px;display:grid;place-items:center;position:relative}
+.core{width:190px;height:190px;border:1px solid var(--c);border-radius:50%;position:relative;display:grid;place-items:center;box-shadow:0 0 22px #00eaff55,inset 0 0 35px #00eaff18}
+.core:before,.core:after{content:"";position:absolute;border-radius:50%;border:1px solid #00eaff66}
+.core:before{inset:17px}.core:after{inset:43px}
+.core .ring{position:absolute;inset:-15px;border:1px dashed #00eaff66;border-radius:50%;animation:spin 12s linear infinite}
+.core .ring2{position:absolute;inset:-31px;border:1px solid #00eaff22;border-radius:50%;animation:spin 18s linear infinite reverse}
+.core:global{}
+.j{font-size:54px;font-weight:200;color:var(--c);text-shadow:0 0 22px #00eaff;z-index:2}
+.core.active{animation:pulse 1.15s infinite}
+.core.speaking .ring{animation:spin 2.2s linear infinite}
+.core.thinking .ring2{animation:spin .9s linear infinite reverse}
+@keyframes pulse{50%{box-shadow:0 0 65px #00eaffbb,inset 0 0 55px #00eaff40}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status{text-align:center;color:var(--c);font-size:12px;font-weight:700;letter-spacing:.22em;margin-top:-18px}
+.equalizer{height:32px;display:flex;gap:3px;align-items:center;justify-content:center;margin:9px 0 13px}
+.equalizer i{width:3px;height:7px;background:var(--c);box-shadow:0 0 8px var(--c);opacity:.25}
+.equalizer.on i{opacity:1;animation:eq .7s ease-in-out infinite alternate}
+.equalizer i:nth-child(2n){animation-delay:.12s}.equalizer i:nth-child(3n){animation-delay:.23s}.equalizer i:nth-child(4n){animation-delay:.35s}
+@keyframes eq{to{height:26px}}
+.panel{background:linear-gradient(145deg,rgba(5,25,32,.9),rgba(2,10,14,.86));border:1px solid #0a4a56;border-radius:18px;padding:14px;margin-top:12px;box-shadow:inset 0 0 25px #00eaff08,0 8px 35px #0008}
+.label{font-size:9px;letter-spacing:.2em;color:#4c8994;margin-bottom:8px}
+.output{min-height:76px;line-height:1.5;color:#dffcff;white-space:pre-wrap}
+.output .user{color:#77dce8}.output .jarvis{color:#f1ffff;text-shadow:0 0 9px #00eaff33}
+button{width:100%;border:1px solid #0a6877;background:linear-gradient(180deg,#062a34,#04171d);color:#e9fdff;border-radius:13px;padding:14px;margin-top:9px;font-size:15px}
+button:active{transform:scale(.98)}
+button.primary{border-color:#00a9bd;box-shadow:0 0 20px #00eaff18}
+video{width:100%;max-height:350px;border-radius:13px;background:#000;display:none;object-fit:cover}
+.meta{display:flex;justify-content:space-between;color:#4e858f;font-size:9px;letter-spacing:.12em;margin-top:9px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><span>JARVIS SYSTEM</span><span id="clock">--:--:--</span></div>
+  <h1>JARVIS</h1>
+  <div class="sub">PERSONAL VOICE INTELLIGENCE</div>
+
+  <div class="coreWrap">
+    <div id="core" class="core">
+      <div class="ring"></div><div class="ring2"></div><span class="j">J</span>
+    </div>
+  </div>
+  <div id="status" class="status">BEREIT</div>
+  <div id="eq" class="equalizer"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <div class="panel">
+    <div class="label">SPRACHEINGABE</div>
+    <div id="heard" class="output">Aktivierung erforderlich. Sag nach dem Start: „Jarvis …“</div>
+    <div class="meta"><span id="micState">MIC OFF</span><span>DE-DE</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="label">JARVIS RESPONSE</div>
+    <div id="answer" class="output"><span class="jarvis">System bereit.</span></div>
+  </div>
+
+  <div class="panel">
+    <video id="camera" autoplay playsinline muted></video>
+    <button id="start" class="primary">🎙️ JARVIS AKTIVIEREN</button>
+    <button id="camOff">📷 KAMERA AUSSCHALTEN</button>
+  </div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const statusEl=$("status"), core=$("core"), eq=$("eq"), heard=$("heard"), answer=$("answer");
+const startBtn=$("start"), camOffBtn=$("camOff"), video=$("camera"), micState=$("micState"), clock=$("clock");
+
+let recognition=null, stream=null, running=false, restarting=false, speaking=false, lastCommand="";
+let voices=[];
+
+function setStatus(s){statusEl.textContent=s}
+function tick(){clock.textContent=new Date().toLocaleTimeString("de-DE",{hour12:false})}
+setInterval(tick,1000); tick();
+
+function setMode(mode){
+  core.classList.remove("active","thinking","speaking");
+  eq.classList.remove("on");
+  if(mode==="listen"){core.classList.add("active");eq.classList.add("on");setStatus("ICH HÖRE");micState.textContent="MIC ACTIVE"}
+  if(mode==="think"){core.classList.add("active","thinking");setStatus("ANALYSE");micState.textContent="PROCESSING"}
+  if(mode==="speak"){core.classList.add("active","speaking");eq.classList.add("on");setStatus("JARVIS SPRICHT");micState.textContent="AUDIO OUTPUT"}
+  if(mode==="ready"){setStatus("BEREIT");micState.textContent="MIC OFF"}
+}
+
+function loadVoices(){voices=("speechSynthesis" in window)?speechSynthesis.getVoices():[]}
+if("speechSynthesis" in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+
+function chooseVoice(){
+  const german=voices.filter(v=>/^de(-|_)/i.test(v.lang));
+  if(!german.length)return null;
+  const maleHints=/male|männ|mark|thomas|hans|daniel|stefan|google deutsch/i;
+  return german.find(v=>maleHints.test(v.name)) || german.find(v=>/de-DE/i.test(v.lang)) || german[0];
+}
+
+function say(text){
+  if(!("speechSynthesis" in window)){setMode("listen");return}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="de-DE"; u.rate=.88; u.pitch=.78; u.volume=1;
+  const v=chooseVoice(); if(v)u.voice=v;
+  u.onstart=()=>{speaking=true;setMode("speak")};
+  u.onend=()=>{speaking=false;if(running){setTimeout(()=>setMode("listen"),250)}else setMode("ready")};
+  u.onerror=()=>{speaking=false;if(running)setMode("listen")};
+  speechSynthesis.speak(u);
+}
+
+function showAnswer(text){answer.innerHTML='<span class="jarvis">'+text.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span>'}
+
+async function cameraOn(){
+  if(stream){showAnswer("Die Kamera ist bereits aktiv.");say("Die Kamera ist bereits aktiv.");return}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+    video.srcObject=stream; video.style.display="block";
+    showAnswer("Kamera aktiviert.");
+    say("Die Kamera ist jetzt aktiv.");
+  }catch(e){
+    showAnswer("Kamerazugriff wurde nicht erteilt.");
+    say("Ich brauche deine Erlaubnis für die Kamera.");
+  }
+}
+
+function cameraOff(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  video.srcObject=null;video.style.display="none";
+  showAnswer("Kamera deaktiviert.");
+  if(running)setMode("listen");else setMode("ready");
+}
+
+function processCommand(raw){
+  const original=raw.trim();
+  if(!original)return;
+  heard.textContent=original;
+  const t=original.toLowerCase();
+  if(!/\bjarvis\b/.test(t))return;
+  const c=t.replace(/\bhey\s+jarvis\b|\bjarvis\b/g,"").trim();
+  if(c===lastCommand)return;
+  lastCommand=c;
+  setMode("think");
+
+  if(/kamera.*(ein|an|start|aktiv)|(?:ein|an|start|aktiv).*kamera/.test(c)){cameraOn();return}
+  if(/kamera.*(aus|stopp|stop|deaktiv)|(?:aus|stopp|stop|deaktiv).*kamera/.test(c)){
+    cameraOff();say("Die Kamera ist ausgeschaltet.");return
+  }
+  if(/(hallo|hi|hey|bist du da|hörst du mich)/.test(c)){
+    showAnswer("Verbindung aktiv. Ich höre dich.");say("Ja. Ich bin da und höre dir zu.");return
+  }
+  if(/(wer bist du|was bist du)/.test(c)){
+    showAnswer("JARVIS // persönliche Sprachschnittstelle.");say("Ich bin JARVIS, deine persönliche Sprachschnittstelle.");return
+  }
+  if(/(sprich|rede|stimme)/.test(c)){
+    showAnswer("Sprachsystem aktiv.");say("Natürlich. Ich bin JARVIS.");return
+  }
+  showAnswer("Befehl erkannt. Das KI-Gehirn ist noch nicht verbunden.");
+  say("Ich habe dich verstanden. Mein KI-Gehirn wird im nächsten Ausbauschritt verbunden.");
+}
+
+function begin(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    setMode("ready");showAnswer("Diese Safari-Version stellt keine kompatible Spracherkennung bereit.");return
+  }
+  if(running)return;
+  recognition=new SR();
+  recognition.lang="de-DE";recognition.continuous=true;recognition.interimResults=true;recognition.maxAlternatives=1;
+
+  recognition.onstart=()=>{running=true;restarting=false;startBtn.textContent="🎙️ JARVIS AKTIV";setMode("listen")};
+  recognition.onresult=e=>{
+    let interim="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i], s=r[0].transcript;
+      if(r.isFinal)processCommand(s);else interim+=s;
+    }
+    if(interim)heard.textContent=interim;
+  };
+  recognition.onerror=e=>{
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+      running=false;setMode("ready");showAnswer("Mikrofonzugriff wurde von Safari nicht freigegeben.");startBtn.textContent="🎙️ JARVIS AKTIVIEREN";
+    }
+  };
+  recognition.onend=()=>{
+    if(running&&!restarting&&!speaking){
+      restarting=true;
+      setTimeout(()=>{restarting=false;try{recognition.start()}catch(e){}},500);
+    }
+  };
+  try{recognition.start()}catch(e){}
+}
+
+startBtn.addEventListener("click",begin);
+camOffBtn.addEventListener("click",cameraOff);
+
+window.addEventListener("load",()=>{
+  setTimeout(()=>{try{begin()}catch(e){}},700);
+});
+</script>
+</body>
+</html>
