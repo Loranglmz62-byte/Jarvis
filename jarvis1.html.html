@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#02070b">
+
+<title>JARVIS // AI VOICE CORE</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  min-height:100%;
+  background:#02070b;
+  color:#dffaff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+}
+
+body{
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 42%,
+      rgba(20,100,125,.28),
+      rgba(2,7,11,.8) 35%,
+      #000 75%);
+}
+
+.app{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:
+    max(22px,env(safe-area-inset-top))
+    18px
+    max(22px,env(safe-area-inset-bottom));
+}
+
+.top{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.logo{
+  font-size:12px;
+  letter-spacing:4px;
+  opacity:.65;
+}
+
+.clock{
+  font-size:12px;
+  letter-spacing:2px;
+  opacity:.5;
+}
+
+.main{
+  width:100%;
+  max-width:700px;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+.core{
+  width:230px;
+  height:230px;
+  border-radius:50%;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border:1px solid rgba(100,225,255,.5);
+
+  box-shadow:
+    0 0 25px rgba(40,190,240,.25),
+    inset 0 0 40px rgba(40,190,240,.12);
+
+  transition:.35s ease;
+}
+
+.core:before,
+.core:after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  border:1px solid rgba(100,225,255,.2);
+}
+
+.core:before{
+  width:180px;
+  height:180px;
+}
+
+.core:after{
+  width:125px;
+  height:125px;
+}
+
+.core.listening{
+  animation:listenPulse 1.2s infinite;
+  box-shadow:
+    0 0 55px rgba(50,210,255,.65),
+    inset 0 0 45px rgba(50,210,255,.2);
+}
+
+.core.thinking{
+  animation:thinkPulse .8s infinite;
+  box-shadow:
+    0 0 60px rgba(100,180,255,.6),
+    inset 0 0 55px rgba(100,180,255,.25);
+}
+
+.core.speaking{
+  animation:speakPulse .42s infinite alternate;
+  box-shadow:
+    0 0 75px rgba(80,230,255,.85),
+    inset 0 0 55px rgba(80,230,255,.25);
+}
+
+.eye{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:#c8f8ff;
+  box-shadow:
+    0 0 18px #68e6ff,
+    0 0 45px rgba(60,220,255,.65);
+  z-index:5;
+}
+
+.status{
+  margin-top:30px;
+  font-size:14px;
+  letter-spacing:4px;
+  text-align:center;
+}
+
+.substatus{
+  margin-top:9px;
+  min-height:18px;
+  font-size:11px;
+  letter-spacing:2px;
+  opacity:.5;
+  text-align:center;
+}
+
+.panel{
+  width:100%;
+  margin-top:22px;
+  padding:17px;
+  border:1px solid rgba(120,220,255,.15);
+  border-radius:18px;
+  background:rgba(5,20,27,.55);
+  backdrop-filter:blur(15px);
+}
+
+.label{
+  font-size:9px;
+  letter-spacing:3px;
+  opacity:.4;
+  margin-bottom:7px;
+}
+
+.heard{
+  min-height:25px;
+  font-size:15px;
+  line-height:1.45;
+}
+
+.answer{
+  margin-top:15px;
+  min-height:25px;
+  font-size:15px;
+  line-height:1.5;
+}
+
+.buttons{
+  width:100%;
+  display:flex;
+  gap:10px;
+  margin-top:18px;
+}
+
+button{
+  flex:1;
+  min-height:52px;
+  border-radius:15px;
+  border:1px solid rgba(100,220,255,.35);
+  background:rgba(10,35,45,.8);
+  color:#e4fbff;
+  font-size:14px;
+  font-weight:600;
+}
+
+button:active{
+  transform:scale(.97);
+}
+
+button.primary{
+  border-color:rgba(100,230,255,.65);
+  box-shadow:0 0 20px rgba(60,210,255,.12);
+}
+
+.warning{
+  margin-top:12px;
+  text-align:center;
+  font-size:10px;
+  line-height:1.5;
+  opacity:.35;
+  max-width:520px;
+}
+
+@keyframes listenPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.035)}
+}
+
+@keyframes thinkPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.055)}
+}
+
+@keyframes speakPulse{
+  from{transform:scale(1)}
+  to{transform:scale(1.085)}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="top">
+    <div class="logo">JARVIS // AI CORE</div>
+    <div class="clock" id="clock">00:00:00</div>
+  </div>
+
+  <main class="main">
+
+    <div class="core" id="core">
+      <div class="eye"></div>
+    </div>
+
+    <div class="status" id="status">
+      BEREIT
+    </div>
+
+    <div class="substatus" id="substatus">
+      SYSTEM STANDBY
+    </div>
+
+    <div class="panel">
+
+      <div class="label">
+        SPRACHERKENNUNG
+      </div>
+
+      <div class="heard" id="heard">
+        Ich warte auf dich...
+      </div>
+
+      <div class="label" style="margin-top:18px">
+        JARVIS
+      </div>
+
+      <div class="answer" id="answer">
+        Tippe auf „JARVIS AKTIVIEREN“.
+      </div>
+
+    </div>
+
+    <div class="buttons">
+
+      <button
+        id="activate"
+        class="primary">
+        🎙️ JARVIS AKTIVIEREN
+      </button>
+
+      <button
+        id="voiceTest">
+        🔊 STIMME TESTEN
+      </button>
+
+    </div>
+
+    <div class="warning">
+      Hinweis: Die KI-Verbindung wird im nächsten Schritt
+      mit dem eigentlichen KI-Gehirn verbunden.
+    </div>
+
+  </main>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   JARVIS CORE
+===================================================== */
+
+const core =
+  document.getElementById("core");
+
+const statusEl =
+  document.getElementById("status");
+
+const substatus =
+  document.getElementById("substatus");
+
+const heard =
+  document.getElementById("heard");
+
+const answer =
+  document.getElementById("answer");
+
+const activate =
+  document.getElementById("activate");
+
+const voiceTest =
+  document.getElementById("voiceTest");
+
+const clock =
+  document.getElementById("clock");
+
+
+let recognition = null;
+
+let active = false;
+
+let speaking = false;
+
+let restarting = false;
+
+let voices = [];
+
+
+/* =====================================================
+   CLOCK
+===================================================== */
+
+function updateClock(){
+
+  clock.textContent =
+    new Date().toLocaleTimeString(
+      "de-DE",
+      {hour12:false}
+    );
+
+}
+
+setInterval(updateClock,1000);
+
+updateClock();
+
+
+/* =====================================================
+   VOICES
+===================================================== */
+
+function loadVoices(){
+
+  if("speechSynthesis" in window){
+
+    voices =
+      speechSynthesis.getVoices();
+
+  }
+
+}
+
+loadVoices();
+
+if("speechSynthesis" in window){
+
+  speechSynthesis.onvoiceschanged =
+    loadVoices;
+
+}
+
+
+/* =====================================================
+   VOICE
+===================================================== */
+
+function getGermanVoice(){
+
+  const german =
+    voices.filter(
+      v => /^de(-|_)/i.test(v.lang)
+    );
+
+  if(!german.length){
+    return null;
+  }
+
+  return (
+    german.find(v =>
+      /de-DE/i.test(v.lang)
+    )
+    ||
+    german[0]
+  );
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+function setMode(mode){
+
+  core.classList.remove(
+    "listening",
+    "thinking",
+    "speaking"
+  );
+
+  if(mode==="ready"){
+
+    statusEl.textContent =
+      "BEREIT";
+
+    substatus.textContent =
+      "SYSTEM STANDBY";
+
+  }
+
+  if(mode==="listen"){
+
+    core.classList.add(
+      "listening"
+    );
+
+    statusEl.textContent =
+      "ICH HÖRE";
+
+    substatus.textContent =
+      "VOICE INPUT ACTIVE";
+
+  }
+
+  if(mode==="think"){
+
+    core.classList.add(
+      "thinking"
+    );
+
+    statusEl.textContent =
+      "ANALYSE";
+
+    substatus.textContent =
+      "JARVIS DENKT...";
+
+  }
+
+  if(mode==="speak"){
+
+    core.classList.add(
+      "speaking"
+    );
+
+    statusEl.textContent =
+      "JARVIS SPRICHT";
+
+    substatus.textContent =
+      "AUDIO OUTPUT";
+
+  }
+
+}
+
+
+/* =====================================================
+   SHOW TEXT
+===================================================== */
+
+function showAnswer(text){
+
+  answer.textContent = text;
+
+}
+
+
+/* =====================================================
+   JARVIS SPEAK
+===================================================== */
+
+function speak(text){
+
+  if(!("speechSynthesis" in window)){
+
+    showAnswer(
+      "Sprachausgabe wird nicht unterstützt."
+    );
+
+    return;
+
+  }
+
+  speaking = true;
+
+  /*
+    Während JARVIS spricht,
+    darf die Erkennung nicht dazwischenfunken.
+  */
+
+  if(recognition){
+
+    try{
+      recognition.stop();
+    }catch(e){}
+
+  }
+
+  speechSynthesis.cancel();
+
+  const utterance =
+    new SpeechSynthesisUtterance(text);
+
+  utterance.lang = "de-DE";
+
+  utterance.rate = 0.88;
+
+  utterance.pitch = 0.78;
+
+  utterance.volume = 1;
+
+  const voice =
+    getGermanVoice();
+
+  if(voice){
+
+    utterance.voice = voice;
+
+  }
+
+
+  utterance.onstart = function(){
+
+    setMode("speak");
+
+  };
+
+
+  utterance.onend = function(){
+
+    speaking = false;
+
+    if(active){
+
+      setMode("listen");
+
+      setTimeout(
+        startRecognition,
+        350
+      );
+
+    }else{
+
+      setMode("ready");
+
+    }
+
+  };
+
+
+  utterance.onerror = function(){
+
+    speaking = false;
+
+    if(active){
+
+      setMode("listen");
+
+    }else{
+
+      setMode("ready");
+
+    }
+
+  };
+
+
+  speechSynthesis.speak(
+    utterance
+  );
+
+}
+
+
+/* =====================================================
+   COMMAND PROCESSOR
+===================================================== */
+
+function processCommand(text){
+
+  text =
+    text.trim();
+
+  if(!text)return;
+
+
+  heard.textContent =
+    "Du: " + text;
+
+
+  const lower =
+    text.toLowerCase();
+
+
+  /*
+    Nur Befehle mit JARVIS
+  */
+
+  if(!lower.includes("jarvis")){
+
+    return;
+
+  }
+
+
+  const command =
+    lower
+      .replace(/jarvis/g,"")
+      .trim();
+
+
+  /*
+    JARVIS HÖRT ZU
+  */
+
+  setMode("think");
+
+
+  /* -------------------------
+     HALLO
+  ------------------------- */
+
+  if(
+    command.includes("hallo") ||
+    command.includes("hi") ||
+    command.includes("hey") ||
+    command.includes("bist du da") ||
+    command.includes("hörst du mich")
+  ){
+
+    const response =
+      "Ja. Ich bin da und höre dir zu.";
+
+    showAnswer(response);
+
+    speak(response);
+
+    return;
+
+  }
+
+
+  /* -------------------------
+     IDENTITÄT
+  ------------------------- */
+
+  if(
+    command.includes("wer bist du") ||
+    command.includes("was bist du")
+  ){
+
+    const response =
+      "Ich bin Jarvis, deine persönliche Sprachschnittstelle.";
+
+    showAnswer(response);
+
+    speak(response);
+
+    return;
+
+  }
+
+
+  /* -------------------------
+     STATUS
+  ------------------------- */
+
+  if(
+    command.includes("status") ||
+    command.includes("wie geht es dir")
+  ){
+
+    const response =
+      "Alle grundlegenden Sprachsysteme sind aktiv.";
+
+    showAnswer(response);
+
+    speak(response);
+
+    return;
+
+  }
+
+
+  /* -------------------------
+     ZEIT
+  ------------------------- */
+
+  if(
+    command.includes("uhrzeit") ||
+    command.includes("wie spät")
+  ){
+
+    const time =
+      new Date().toLocaleTimeString(
+        "de-DE",
+        {hour12:false}
+      );
+
+    const response =
+      "Es ist " + time + " Uhr.";
+
+    showAnswer(response);
+
+    speak(response);
+
+    return;
+
+  }
+
+
+  /* -------------------------
+     STIMME
+  ------------------------- */
+
+  if(
+    command.includes("sprich") ||
+    command.includes("stimme")
+  ){
+
+    const response =
+      "Sprachsystem aktiv. Ich kann dich hören und mit dir sprechen.";
+
+    showAnswer(response);
+
+    speak(response);
+
+    return;
+
+  }
+
+
+  /* -------------------------
+     NOCH NICHT VERBUNDEN
+  ------------------------- */
+
+  const response =
+    "Ich habe deinen Befehl erkannt. Das KI-Gehirn ist noch nicht verbunden.";
+
+  showAnswer(response);
+
+  speak(response);
+
+}
+
+
+/* =====================================================
+   CREATE SPEECH RECOGNITION
+===================================================== */
+
+function createRecognition(){
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+
+  if(!SpeechRecognition){
+
+    showAnswer(
+      "Diese Safari-Version unterstützt keine Spracherkennung."
+    );
+
+    setMode("ready");
+
+    return false;
+
+  }
+
+
+  recognition =
+    new SpeechRecognition();
+
+
+  recognition.lang =
+    "de-DE";
+
+
+  /*
+    WICHTIG:
+
+    continuous = true
+
+    Dadurch versucht JARVIS
+    dauerhaft zuzuhören.
+  */
+
+  recognition.continuous =
+    true;
+
+
+  /*
+    Dadurch sehen wir bereits,
+    was während des Sprechens
+    erkannt wird.
+  */
+
+  recognition.interimResults =
+    true;
+
+
+  recognition.maxAlternatives =
+    1;
+
+
+  /* -------------------------
+     START
+  ------------------------- */
+
+  recognition.onstart =
+    function(){
+
+      restarting = false;
+
+      setMode("listen");
+
+    };
+
+
+  /* -------------------------
+     RESULT
+  ------------------------- */
+
+  recognition.onresult =
+    function(event){
+
+      let interim = "";
+
+
+      for(
+        let i=event.resultIndex;
+        i<event.results.length;
+        i++
+      ){
+
+        const result =
+          event.results[i];
+
+
+        const transcript =
+          result[0].transcript;
+
+
+        /*
+          Während du noch redest:
+          JARVIS bekommt bereits
+          den vorläufigen Text.
+        */
+
+        if(!result.isFinal){
+
+          interim +=
+            transcript;
+
+        }
+
+
+        /*
+          Sobald Safari den Satz
+          als fertig erkennt:
+          direkt verarbeiten.
+        */
+
+        if(result.isFinal){
+
+          processCommand(
+            transcript
+          );
+
+        }
+
+      }
+
+
+      if(interim){
+
+        heard.textContent =
+          "Du: " + interim;
+
+      }
+
+    };
+
+
+  /* -------------------------
+     ERROR
+  ------------------------- */
+
+  recognition.onerror =
+    function(event){
+
+      console.log(
+        "JARVIS Speech Error:",
+        event.error
+      );
+
+
+      if(
+        event.error ===
+        "not-allowed"
+        ||
+        event.error ===
+        "service-not-allowed"
+      ){
+
+        active = false;
+
+        setMode("ready");
+
+        showAnswer(
+          "Mikrofonzugriff wurde nicht erlaubt."
+        );
+
+        activate.textContent =
+          "🎙️ JARVIS AKTIVIEREN";
+
+      }
+
+    };
+
+
+  /* -------------------------
+     END
+  ------------------------- */
+
+  recognition.onend =
+    function(){
+
+      /*
+        Safari beendet continuous
+        manchmal automatisch.
+
+        Deshalb starten wir
+        die Erkennung wieder.
+      */
+
+      if(
+        active &&
+        !speaking &&
+        !restarting
+      ){
+
+        restarting = true;
+
+        setTimeout(
+          startRecognition,
+          400
+        );
+
+      }
+
+    };
+
+
+  return true;
+
+}
+
+
+/* =====================================================
+   START RECOGNITION
+===================================================== */
+
+function startRecognition(){
+
+  if(!active){
+    return;
+  }
+
+
+  if(speaking){
+    return;
+  }
+
+
+  if(!recognition){
+
+    if(!createRecognition()){
+
+      active=false;
+
+      return;
+
+    }
+
+  }
+
+
+  try{
+
+    recognition.start();
+
+  }catch(error){
+
+    /*
+      Safari kann "already started"
+      melden. Das ist kein Problem.
+    */
+
+    console.log(
+      "Recognition start:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   ACTIVATE
+===================================================== */
+
+function activateJarvis(){
+
+  /*
+    Ausschalten
+  */
+
+  if(active){
+
+    active=false;
+
+    if(recognition){
+
+      try{
+        recognition.stop();
+      }catch(e){}
+
+    }
+
+    setMode("ready");
+
+    activate.textContent =
+      "🎙️ JARVIS AKTIVIEREN";
+
+    showAnswer(
+      "Sprachsystem angehalten."
+    );
+
+    return;
+
+  }
+
+
+  /*
+    Einschalten
+  */
+
+  active=true;
+
+  activate.textContent =
+    "⏹️ JARVIS STOPPEN";
+
+  showAnswer(
+    "Ich bin bereit. Sprich mit mir."
+  );
+
+  startRecognition();
+
+}
+
+
+/* =====================================================
+   BUTTON
+===================================================== */
+
+activate.addEventListener(
+  "click",
+  activateJarvis
+);
+
+
+/* =====================================================
+   VOICE TEST
+===================================================== */
+
+voiceTest.addEventListener(
+  "click",
+  function(){
+
+    speak(
+      "Hallo. Ich bin Jarvis. Meine Stimme funktioniert."
+    );
+
+  }
+);
+
+
+/* =====================================================
+   START
+===================================================== */
+
+setMode("ready");
+
+</script>
+
+</body>
+</html>
